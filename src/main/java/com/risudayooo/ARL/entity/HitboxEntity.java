@@ -7,9 +7,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.level.Level;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraft.world.phys.Vec3;
 
@@ -39,15 +37,18 @@ public class HitboxEntity extends Entity {
     public void tick() {
         super.tick();
 
-        System.out.println("[HitboxEntity] tick count: " + this.tickCount + " at position: " + this.position());
-
         if (!level().isClientSide) {
             showBoxOutlineWithParticles();
-            level().addParticle(ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 0, 0, 0);
+            level().addParticle(ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 0, 0, 0.01);
         }
 
         if (tickCount == 1 && !level().isClientSide) {
             System.out.println("[HitboxEntity] spawning particles...");
+        }
+
+        if (tickCount > 2) {
+            this.discard();
+            System.out.println("[HitboxEntity] discarded after short lifespan");
         }
     }
 
@@ -65,32 +66,31 @@ public class HitboxEntity extends Entity {
         double minZ = base.z - d / 2;
         double maxZ = base.z + d / 2;
 
-        drawEdge(minX, minY, minZ, maxX, minY, minZ);
-        drawEdge(minX, maxY, minZ, maxX, maxY, minZ);
-        drawEdge(minX, minY, maxZ, maxX, minY, maxZ);
-        drawEdge(minX, maxY, maxZ, maxX, maxY, maxZ);
-        drawEdge(minX, minY, minZ, minX, maxY, minZ);
-        drawEdge(maxX, minY, minZ, maxX, maxY, minZ);
-        drawEdge(minX, minY, maxZ, minX, maxY, maxZ);
-        drawEdge(maxX, minY, maxZ, maxX, maxY, maxZ);
-        drawEdge(minX, minY, minZ, minX, minY, maxZ);
-        drawEdge(maxX, minY, minZ, maxX, minY, maxZ);
-        drawEdge(minX, maxY, minZ, minX, maxY, maxZ);
-        drawEdge(maxX, maxY, minZ, maxX, maxY, maxZ);
+        drawEdge(minX, minY, minZ, maxX, minY, minZ); // 前面下辺
+        drawEdge(minX, maxY, minZ, maxX, maxY, minZ); // 前面上辺
+        drawEdge(minX, minY, maxZ, maxX, minY, maxZ); // 背面下辺
+        drawEdge(minX, maxY, maxZ, maxX, maxY, maxZ); // 背面上辺
+        drawEdge(minX, minY, minZ, minX, maxY, minZ); // 左前柱
+        drawEdge(maxX, minY, minZ, maxX, maxY, minZ); // 右前柱
+        drawEdge(minX, minY, maxZ, minX, maxY, maxZ); // 左後柱
+        drawEdge(maxX, minY, maxZ, maxX, maxY, maxZ); // 右後柱
+        drawEdge(minX, minY, minZ, minX, minY, maxZ); // 底面左辺
+        drawEdge(maxX, minY, minZ, maxX, minY, maxZ); // 底面右辺
+        drawEdge(minX, maxY, minZ, minX, maxY, maxZ); // 上面左辺
+        drawEdge(maxX, maxY, minZ, maxX, maxY, maxZ); // 上面右辺
     }
 
     private void drawEdge(double x1, double y1, double z1, double x2, double y2, double z2) {
-        if (!(this.level() instanceof ServerLevel serverLevel)) return;
-
-        int segments = 10;
+        int segments = 3;
         for (int i = 0; i <= segments; i++) {
             double t = i / (double) segments;
             double x = x1 + (x2 - x1) * t;
             double y = y1 + (y2 - y1) * t;
             double z = z1 + (z2 - z1) * t;
 
-            serverLevel.sendParticles(ParticleTypes.FLAME, x, y, z, 10, 0, 0, 0, 0.05);
-            System.out.printf("[Particle] %f, %f, %f%n", x, y, z);
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(ParticleTypes.CRIT, x, y, z, 1, 0, 0, 0, 0);
+            }
         }
     }
 

@@ -4,46 +4,43 @@ import com.risudayooo.ARL.entity.HitboxEntity;
 import com.risudayooo.ARL.registry.ModEntities;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 public class HitboxManager {
 
-    private static final Vec2[] OFFSETS = {
-            new Vec2(0f, 1f),   // 0° (南)
-            new Vec2(1f, 1f),   // 45°
-            new Vec2(1f, 0f),   // 90° (西)
-            new Vec2(1f, -1f),  // 135°
-            new Vec2(0f, -1f),  // 180° (北)
-            new Vec2(-1f, -1f), // 225°
-            new Vec2(-1f, 0f),  // 270° (東)
-            new Vec2(-1f, 1f)   // 315°
-    };
-
+    /**
+     * プレイヤーのYawに対して、ローカル座標(localPos)を回転・変換し、
+     * ヒットボックスをワールドに出現させます。
+     * Pitch（上下方向）は無視し、視点に対して常に垂直な位置に出す。
+     */
     public static void spawnHitboxFor(Player player, Level level,
                                       float width, float height, float depth,
                                       Vec3 localPos) {
-        double yawRad = Math.toRadians(player.getYRot()); // 符号を反転しない版
+        // プレイヤーのYaw回転を左回りに補正（数学座標系に合わせる）
+        double yawRad = Math.toRadians(-player.getYRot());
 
         double cosYaw = Math.cos(yawRad);
         double sinYaw = Math.sin(yawRad);
 
+        // ローカル座標（回転前）
         double x = localPos.x;
         double y = localPos.y;
         double z = localPos.z;
 
-        // こちらを試してください（符号反転パターン）
-        double dx = x * cosYaw - z * sinYaw;
+        // Yaw回転（水平面上）
+        double dx = x * cosYaw + z * sinYaw;
         double dz = x * sinYaw + z * cosYaw;
 
+        // ワールド座標計算
         double worldX = player.getX() + dx;
-        double worldY = player.getY() + y;
+        double worldY = player.getY() + player.getEyeHeight() + y;
         double worldZ = player.getZ() + dz;
 
+        // ヒットボックス生成と設定
         HitboxEntity hitbox = new HitboxEntity(ModEntities.HITBOX.get(), level);
         hitbox.setPos(worldX, worldY, worldZ);
         hitbox.setCustomSize(width, height, depth);
-        hitbox.setRotationYaw(player.getYRot());
+        hitbox.setRotationYaw(player.getYRot()); // Yawにだけ従って面向きを設定
 
         level.addFreshEntity(hitbox);
 

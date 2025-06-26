@@ -1,5 +1,6 @@
 package com.risudayooo.ARL;
 
+import com.risudayooo.ARL.registry.ModEntities;
 import com.risudayooo.ARL.registry.ModItems;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -13,5 +14,6 @@ public class ARL {
     public ARL() {
         IEventBus modEventbus = FMLJavaModLoadingContext.get().getModEventBus();
         ModItems.register(modEventbus);
+        ModEntities.register(modEventbus);
     }
 }
